@@ -1,3 +1,9 @@
+# Ignore loadData.py
+loadData.py~
+/loadData.py
+loadData.py
+
+# Ignore Python related files
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
