@@ -29,6 +29,6 @@ Training and test set data are organized in a .CSV file where the first column r
 For the training .CSV file, the last column represents the fold the 20-second epoch was allocated to for five-fold cross-validation.
 
 ## 👩‍💻 Code organization
-Make a copy of the loadData_example.py and name it loadData.py. In loadData.py, specify the path to the folder containing the .CSV files at line 14.
+Make a copy of the loadData_example.py and name it loadData.py. In loadData.py, specify the path to the folder containing the Xy_train and Xy_test .CSV files at line 14.
 
 Run mainSH.py for ETC performance in five-fold cross-validation and on the test set. The last cell in this code will show the SHAP analysis.
