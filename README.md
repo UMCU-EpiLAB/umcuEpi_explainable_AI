@@ -1,4 +1,5 @@
-![git_umcuepi_xai](https://github.com/UMCU-EpiLAB/umcuEpi_explainable_AI/assets/73480193/7e041dbe-ee74-44a4-b6e2-5aa58fb01dfc)
+![image](https://github.com/UMCU-EpiLAB/umcuEpi_explainable_AI/assets/73480193/47e753a9-ec92-4810-bf24-1ee29b553f29)
+
 
 
 **This code supports the findings in the manuscript titled 'Explainable artificial intelligence reveals epilepsy and non-epilepsy specific spectral band powers in the intra-operative electrocorticogram' by Hoogteijling et al.** Please cite this article for every work that uses code or data from this repository.
