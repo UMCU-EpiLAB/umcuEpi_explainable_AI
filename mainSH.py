@@ -6,8 +6,8 @@ Created on Thu Aug 24 15:37:59 2023
 @author: Sem Hoogteijling
 s.hoogteijling@umcutrecht.nl
 
-This python code is developed for the manuscript'Explainable AI reveals epilespy
-and non-epilepsy specific spectral band powers in the intra-operative electrocorticography'
+This python code is developed for the manuscript'Artificial intelligence for (non-)epileptic
+tissue detection from the intraoperative electrocorticogram'
 by Hoogteijling et al.
 
 """
