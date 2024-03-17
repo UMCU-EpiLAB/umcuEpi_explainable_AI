@@ -2,7 +2,7 @@
 
 
 
-**This code supports the findings in the manuscript titled '_Explainable AI unveils (non-)epileptiform spectral powers in intraoperative electrocorticography_' by Hoogteijling et al.** Please cite this article for every work that uses code or data from this repository.
+**This code supports the findings in the manuscript titled '_Artificial intelligence for (non-)epileptic tissue detection from the intraoperative electrocorticogram_' by Hoogteijling et al.** Please cite this article for every work that uses code or data from this repository.
 
 ## 🛠 Python dependencies and packages
 The code was developed in Pyhton 3.9.2 using Spyder 4.2.1.
@@ -16,7 +16,7 @@ The following packages were used and can be installed via pip install or conda i
 - seaborn (0.11.2)
 
 ## 🧠 Data preparation
-Please read the manuscript for data aquisition and pre-processing details. The intra-operative electrocorticogram spectral bands power data set can be download from the Supplementary Data and from DataVerse.
+Please read the manuscript for data aquisition and pre-processing details. The intraoperative electrocorticogram spectral bands power data set can be download from the Supplementary Data and from DataVerse.
 
 Training and test set data are organized in a .CSV file where the first column represent the label and every other column represent a spectral feature. Each row represents a single ioECoG 20-second epoch, similar to:
 
