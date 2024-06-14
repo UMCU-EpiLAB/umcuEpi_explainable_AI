@@ -2,7 +2,7 @@
 
 
 
-**This code supports the findings in the manuscript titled '_Artificial intelligence for (non-)epileptic tissue detection from the intraoperative electrocorticogram_' by Hoogteijling et al.** Please cite this article for every work that uses code or data from this repository.
+**This code supports the findings in the manuscript titled '_Machine learning for (non-)epileptic tissue detection from the intraoperative electrocorticogram_' by Hoogteijling et al.** Please cite this article for every work that uses code or data from this repository.
 
 ## 🛠 Python dependencies and packages
 The code was developed in Pyhton 3.9.2 using Spyder 4.2.1.
