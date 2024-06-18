@@ -9,7 +9,6 @@ s.hoogteijling@umcutrecht.nl
 This python code is developed for the manuscript'Machine learning for (non-)epileptic
 tissue detection from the intraoperative electrocorticogram'
 by Hoogteijling et al.
-
 """
 #%%
 import pandas as pd 
@@ -20,26 +19,60 @@ from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 import shap
-import seaborn as sns
 import copy
-
+from scipy.stats import beta
+from scipy.stats import norm
+import delong
 from loadData import loadSpectralFeatures
 
-sns.set_theme(style = 'ticks', font = 'Times New Roman') #set theme for plots
 #%% load data
+
 X_train, y_train, X_test, y_test = loadSpectralFeatures() #load spectral features
 
 #%% some functions
 
-def getMetrics(y,y_pred):
-    tn,fp, fn, tp = confusion_matrix(y,y_pred).ravel()
-    metrics = {
-        'acc': (tn+tp)/(tp+tn+fp+fn),
-        'sens': tp/(tp+fn),
-        'spec': tn/(tn+fp),
-        'ppv': tp/(tp+fp),
-        'npv': tn/(fn+tn),
-        }
+def getMetrics(y,y_pred, CI = False, alpha = 0.05, print_ = False):
+    TN,FP, FN, TP = confusion_matrix(y,y_pred).ravel()
+
+    n0 = TN+FP
+    n1 = TP+FN
+    p = n1/(n0+n1)
+    
+    acc = (TP + TN) / (TP + TN + FP + FN)
+    Se = TP/n1
+    Sp = TN/n0
+    
+    ppv = Se*p/(Se*p + (1-Sp)* (1-p))
+    npv = (Sp*(1-p))/((1-Se)*p+Sp*(1-p))
+    metrics = {'acc': acc, 'Se': Se, 'Sp': Sp, 'ppv': ppv, 'npv': npv}
+    
+    if CI:
+        z = norm.ppf(1 - alpha / 2) # Critical value for standard normal distribution
+        
+        logPPV = np.log(Se*p/((1-Sp)*(1-p)))
+        varlogPPV = ((1-Se)/Se)*(1/n1)+((Sp/(1-Sp))*(1/n0))
+        upper_bound_ppv = np.exp(logPPV+z*np.sqrt(varlogPPV))/(1+np.exp(logPPV+z*np.sqrt(varlogPPV)))
+        lower_bound_ppv = np.exp(logPPV-z*np.sqrt(varlogPPV))/(1+np.exp(logPPV-z*np.sqrt(varlogPPV))) 
+        ppv = [ppv, lower_bound_ppv, upper_bound_ppv]
+        
+        logNPV = np.log(Sp*(1-p)/((1-Se)*p))
+        varlogNPV = ((Se/(1-Se))*(1/n1)) + ((1-Sp)/Sp)*(1/n0)
+        
+        upper_bound_npv = np.exp(logNPV+z*np.sqrt(varlogNPV))/(1+np.exp(logNPV+z*np.sqrt(varlogNPV)))
+        lower_bound_npv = np.exp(logNPV-z*np.sqrt(varlogNPV))/(1+np.exp(logNPV-z*np.sqrt(varlogNPV)))  
+        npv = [npv,lower_bound_npv,upper_bound_npv]
+        
+        acc = [acc, beta.ppf(alpha / 2, TN+TP, FP+FN + 1), beta.ppf(1 - alpha / 2, TN+TP + 1, FP+FN)]
+        Se = [Se, beta.ppf(alpha / 2, TP, FN + 1), beta.ppf(1 - alpha / 2, TP + 1, FN)]
+        Sp = [Sp, beta.ppf(alpha / 2, TN, FP + 1), beta.ppf(1 - alpha / 2, TN + 1, FP)]
+        
+        metrics = {'acc': acc, 'Se': Se, 'Sp': Sp, 'ppv': ppv, 'npv': npv}
+        
+        if print_:
+            for metric in metrics.keys():
+                print(metric+':', np.round(metrics[metric][0]*100,1), '(' + str(np.round(metrics[metric][1]*100,1))+ '-'+ str(np.round(metrics[metric][2]*100,1))+')%')
+        
+
     return metrics
     
 def progressBar(iterable, prefix = '', suffix = '', decimals = 1, length = 25, fill = '█', printEnd = "\r"):
@@ -62,8 +95,8 @@ def progressBar(iterable, prefix = '', suffix = '', decimals = 1, length = 25, f
 #%% 5 fold cross validation and test set evaluation
 
 spec_best = 0
-summary_metrics_train = pd.DataFrame(columns = ['acc', 'sens', 'spec', 'ppv','npv','auc']) #create summary metrics dataframe
-summary_metrics_val = pd.DataFrame(columns = ['acc', 'sens', 'spec', 'ppv','npv','auc'])
+summary_metrics_train = pd.DataFrame(columns = ['acc', 'Se', 'Sp', 'ppv','npv','auc']) #create summary metrics dataframe
+summary_metrics_val = pd.DataFrame(columns = ['acc', 'Se', 'Sp', 'ppv','npv','auc'])
 
 
 for i in progressBar(range(5), prefix = 'Progress 5 fold CV:', suffix = 'Complete'):
@@ -115,14 +148,24 @@ for i in progressBar(range(5), prefix = 'Progress 5 fold CV:', suffix = 'Complet
     summary_metrics_val.loc[i] = metrics_val
 
     #check if this is the best fold yet and if so, save ETC model, scaler, thr95, fpr_train and tpr_train
-    if metrics_val['spec']>spec_best:
-        spec_best = metrics_val['spec']
+    if metrics_val['Sp']>spec_best:
+        spec_best = metrics_val['Sp']
         ETC_best = copy.deepcopy(ETC)
         scaler_best = copy.deepcopy(scaler)
         thr95_best = copy.deepcopy(thr95)
         fpr_train_best = copy.deepcopy(fpr_train)
         tpr_train_best = copy.deepcopy(tpr_train)
 
+
+#print results
+print('-'*65, '\n SUMMARY METRICS 5FOLD CV:')
+print('      Training   | Validation \n      Mean (SD)  | Mean (SD)')
+print('Acc : %0.2f (%0.2f)' %(summary_metrics_train['acc'].mean(),summary_metrics_train['acc'].std()) + '| %0.2f (%0.2f)' %(summary_metrics_val['acc'].mean(),summary_metrics_val['acc'].std()))
+print('Sens: %0.2f (%0.2f)' %(summary_metrics_train['Se'].mean(),summary_metrics_train['Se'].std()) + '| %0.2f (%0.2f)' %(summary_metrics_val['Se'].mean(),summary_metrics_val['Se'].std()))
+print('Spec: %0.2f (%0.2f)' %(summary_metrics_train['Sp'].mean(),summary_metrics_train['Sp'].std()) + '| %0.2f (%0.2f)' %(summary_metrics_val['Sp'].mean(),summary_metrics_val['Sp'].std()))
+print('PPV : %0.2f (%0.2f)' %(summary_metrics_train['ppv'].mean(),summary_metrics_train['ppv'].std()) + '| %0.2f (%0.2f)' %(summary_metrics_val['ppv'].mean(),summary_metrics_val['ppv'].std()))
+print('NPV : %0.2f (%0.2f)' %(summary_metrics_train['npv'].mean(),summary_metrics_train['npv'].std()) + '| %0.2f (%0.2f)' %(summary_metrics_val['npv'].mean(),summary_metrics_val['npv'].std()))
+print('AUC : %0.2f (%0.2f)' %(summary_metrics_train['auc'].mean(),summary_metrics_train['auc'].std()) + '| %0.2f (%0.2f)' %(summary_metrics_val['auc'].mean(),summary_metrics_val['auc'].std()))
 
 ## Calculate performance on the test set
 #scale data
@@ -132,9 +175,25 @@ X_test_scaled = scaler_best.transform(X_test)
 y_test_pred = ETC_best.predict_proba(X_test_scaled)[:,1] 
 y_test_pred95 = (y_test_pred >= thr95).astype(bool)
 
-metrics_test = getMetrics(y_test,y_test_pred95)
+#print results
+print('-'*65, '\n METRICS TEST SET:')
+metrics_test = getMetrics(y_test,y_test_pred95, CI = True, print_=True)
 
-#compute performance metrics ETC on train and validation subsets
+#AUC sklearn
+fpr_test, tpr_test, thresholds_test = roc_curve(y_test,y_test_pred)
+print('AUC:', auc(fpr_test, tpr_test))
+
+#AUC deLong
+alpha = 0.95
+auc_delong, auc_cov = delong.delong_roc_variance(y_test,y_test_pred)
+auc_std = np.sqrt(auc_cov)
+lower_upper_q = np.abs(np.array([0, 1]) - (1 - alpha) / 2)
+ci = norm.ppf(lower_upper_q,loc=auc_delong,scale=auc_std)
+ci[ci > 1] = 1
+print('AUC deLong:', np.round(auc_delong,2), '('+str(np.round(ci[0],2))+'-'+ str(np.round(ci[1],2))+')')
+
+
+#compute performance metrics ETC on train subsets
 fpr_test, tpr_test, thresholds_test = roc_curve(y_test,y_test_pred)
 metrics_test['auc'] = auc(fpr_test, tpr_test)
 
@@ -160,24 +219,6 @@ plt.title('Receiver operating characteristic', fontsize=30)
 plt.legend(loc="lower right", fontsize=27)
 plt.show()
 
-
-#print results
-print('-'*65, '\n SUMMARY METRICS 5FOLD CV:')
-print('      Training   | Validation \n      Mean (SD)  | Mean (SD)')
-print('Acc : %0.2f (%0.2f)' %(summary_metrics_train['acc'].mean(),summary_metrics_train['acc'].std()) + '| %0.2f (%0.2f)' %(summary_metrics_val['acc'].mean(),summary_metrics_val['acc'].std()))
-print('Sens: %0.2f (%0.2f)' %(summary_metrics_train['sens'].mean(),summary_metrics_train['sens'].std()) + '| %0.2f (%0.2f)' %(summary_metrics_val['sens'].mean(),summary_metrics_val['sens'].std()))
-print('Spec: %0.2f (%0.2f)' %(summary_metrics_train['spec'].mean(),summary_metrics_train['spec'].std()) + '| %0.2f (%0.2f)' %(summary_metrics_val['spec'].mean(),summary_metrics_val['spec'].std()))
-print('PPV : %0.2f (%0.2f)' %(summary_metrics_train['ppv'].mean(),summary_metrics_train['ppv'].std()) + '| %0.2f (%0.2f)' %(summary_metrics_val['ppv'].mean(),summary_metrics_val['ppv'].std()))
-print('NPV : %0.2f (%0.2f)' %(summary_metrics_train['npv'].mean(),summary_metrics_train['npv'].std()) + '| %0.2f (%0.2f)' %(summary_metrics_val['npv'].mean(),summary_metrics_val['npv'].std()))
-print('AUC : %0.2f (%0.2f)' %(summary_metrics_train['auc'].mean(),summary_metrics_train['auc'].std()) + '| %0.2f (%0.2f)' %(summary_metrics_val['auc'].mean(),summary_metrics_val['auc'].std()))
-
-print('-'*65, '\n METRICS TEST SET:')
-print('Acc : %0.2f' %metrics_test['acc'])
-print('Sens: %0.2f' %metrics_test['sens'])
-print('Spec: %0.2f' %metrics_test['spec'])
-print('PPV : %0.2f' %metrics_test['ppv'])
-print('NPV : %0.2f' %metrics_test['npv'])
-print('AUC : %0.2f' %metrics_test['auc'])
 
 
 #%% SHAP analysis
