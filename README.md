@@ -13,7 +13,6 @@ The following packages were used and can be installed via pip install or conda i
 - sklearn (1.3.0)
 - matplotlib.pyplot (3.3.4)
 - shap (0.40.0)
-- seaborn (0.11.2)
 
 ## 🧠 Data preparation
 Please read the manuscript for data aquisition and pre-processing details. The intraoperative electrocorticogram spectral bands power data set can be download from the Supplementary Data and from DataVerse.
