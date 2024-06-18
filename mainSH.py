@@ -6,7 +6,7 @@ Created on Thu Aug 24 15:37:59 2023
 @author: Sem Hoogteijling
 s.hoogteijling@umcutrecht.nl
 
-This python code is developed for the manuscript'Artificial intelligence for (non-)epileptic
+This python code is developed for the manuscript'Machine learning for (non-)epileptic
 tissue detection from the intraoperative electrocorticogram'
 by Hoogteijling et al.
 
