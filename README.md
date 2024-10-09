@@ -15,7 +15,7 @@ The following packages were used and can be installed via pip install or conda i
 - shap (0.40.0)
 
 ## 🧠 Data preparation
-Please read the manuscript for data aquisition and pre-processing details. The intraoperative electrocorticogram spectral bands power data set can be download from the Supplementary Data and from DataVerse.
+Please read the manuscript for data aquisition and pre-processing details. The intraoperative electrocorticogram spectral bands power data set can be download from DataVerse (see manuscript).
 
 Training and test set data are organized in a .CSV file where one column represent the label and every other column represent a spectral feature. Each row represents a single ioECoG 20-second epoch, similar to:
 
